@@ -12,7 +12,7 @@ The service is most easily run as a docker container. The only configuration nec
 is your incoming webhook integration URL.
 
 ```bash
-docker run -d -e DISCORDICE_TOKEN="<your Discord token>" -p 8000:8000 --name=discordice justinian/discordice
+docker run -d -e DISCORDICE_TOKEN="<your Discord token>" --name=discordice justinian/discordice
 ```
 
 See the docker container builds at https://registry.hub.docker.com/u/justinian/discordice
@@ -20,3 +20,12 @@ See the docker container builds at https://registry.hub.docker.com/u/justinian/d
 To add my instance of discordice to your server, [use this link][1].
 
 [1]: https://discordapp.com/api/oauth2/authorize?client_id=232229987145482261&scope=bot&permissions=11264
+
+## Thanks
+
+This repository mostly just steals from [my slack dice bot][2] and [the
+discordgo airhorn example][3]. Many thanks to bwmarrin for Discordgo and the
+great examples.
+
+[2]: https://github.com/justinian/slackdice
+[3]: https://github.com/bwmarrin/discordgo/tree/master/examples/airhorn
