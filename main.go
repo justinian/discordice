@@ -17,6 +17,12 @@ type Config struct {
 	Token string
 }
 
+var helpMsg = strings.Join([]string{
+	"Hi! I'm a dice bot.",
+	"Use `!roll <format>` to roll some dice.",
+	"For format help, see: http://bit.ly/dice-bot",
+}, "\n")
+
 func main() {
 	var c Config
 	envconfig.Process("discordice", &c)
@@ -72,19 +78,33 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// check if the message is "!roll"
-	if strings.HasPrefix(m.Content, "!roll") {
+	if strings.HasPrefix(m.Content, "!rollhelp") {
+		c, err := s.UserChannelCreate(m.Author.ID)
+		if err != nil {
+			log.Printf("Couldn't open DM to user: %v", err)
+			return
+		}
+
+		_, err = s.ChannelMessageSend(c.ID, helpMsg)
+		if err != nil {
+			log.Printf("Error sending message to %v: %s", c, err)
+			return
+		}
+
+		mc, err := s.State.Channel(m.ChannelID)
+		if err == nil && mc.Type == discordgo.ChannelTypeGuildText {
+			err = s.ChannelMessageDelete(m.ChannelID, m.ID)
+			if err != nil {
+				log.Printf("Error deleting message in %v: %s", mc, err)
+				return
+			}
+		}
+	} else if strings.HasPrefix(m.Content, "!roll") {
 		// Find the channel that the message came from.
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			// Could not find channel.
-			return
-		}
-
-		// Find the guild for that channel.
-		_, err = s.State.Guild(c.GuildID)
-		if err != nil {
-			// Could not find guild.
+			log.Printf("No channel ID: %v", err)
 			return
 		}
 
@@ -119,10 +139,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
-		err = s.ChannelMessageDelete(m.ChannelID, m.ID)
-		if err != nil {
-			log.Printf("Error deleting message in %v: %s", c, err)
-			return
+		if c.Type == discordgo.ChannelTypeGuildText {
+			err = s.ChannelMessageDelete(m.ChannelID, m.ID)
+			if err != nil {
+				log.Printf("Error deleting message in %v: %s", c, err)
+				return
+			}
 		}
 	}
 }
@@ -134,6 +156,12 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 		return
 	}
 
-	log.Printf("Joined %s's Guild: %s (%s) in %s",
-		event.Guild.OwnerID, event.Guild.Name, event.Guild.ID, event.Guild.Region)
+	log.Printf("Joined Guild: %s (%s) in %s",
+		event.Guild.Name, event.Guild.ID, event.Guild.Region)
+
+	owner, err := s.User(event.Guild.OwnerID)
+	if err == nil {
+		log.Printf("\tOwned by: %s#%s (%s)",
+			owner.Username, owner.Discriminator, owner.ID)
+	}
 }
